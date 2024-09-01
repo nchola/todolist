@@ -11,9 +11,10 @@ class TodoService {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         List<dynamic> body = jsonDecode(response.body);
+        print('Todos received: $body'); // Cetak data untuk debugging
         return body.map((dynamic item) => Todo.fromJson(item)).toList();
       } else {
-        throw Exception('Failed to load todos');
+        throw Exception('Failed to load todos: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching todos: $e');
@@ -22,50 +23,52 @@ class TodoService {
   }
 
   Future<Todo> createTodo(String title) async {
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'title': title}),
-      );
-      if (response.statusCode == 201) {
+    return _handleRequest<Todo>(
+      () async {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'title': title}),
+        );
         return Todo.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception('Failed to create todo');
-      }
-    } catch (e) {
-      print('Error creating todo: $e');
-      throw e;
-    }
+      },
+      'Failed to create todo',
+    );
   }
 
   Future<Todo> updateTodo(String id, Todo todo) async {
-    try {
-      final response = await http.patch(
-        Uri.parse('$apiUrl/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(todo.toJson()),
-      );
-      if (response.statusCode == 200) {
+    return _handleRequest<Todo>(
+      () async {
+        final response = await http.patch(
+          Uri.parse('$apiUrl/$id'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(todo.toJson()),
+        );
         return Todo.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception('Failed to update todo');
-      }
-    } catch (e) {
-      print('Error updating todo: $e');
-      throw e;
-    }
+      },
+      'Failed to update todo',
+    );
   }
 
   Future<void> deleteTodo(String id) async {
+    await _handleRequest<void>(
+      () async {
+        final response = await http.delete(Uri.parse('$apiUrl/$id'));
+        if (response.statusCode != 200) {
+          throw Exception('Failed to delete todo');
+        }
+      },
+      'Failed to delete todo',
+    );
+  }
+
+  Future<T> _handleRequest<T>(
+      Future<T> Function() request, String errorMessage) async {
     try {
-      final response = await http.delete(Uri.parse('$apiUrl/$id'));
-      if (response.statusCode != 200) {
-        throw Exception('Failed to delete todo');
-      }
+      return await request();
     } catch (e) {
-      print('Error deleting todo: $e');
-      throw e;
+      print('Error: $e');
+      throw Exception(errorMessage);
     }
   }
 }

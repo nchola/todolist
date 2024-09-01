@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No todos found'));
           } else {
+            print('Todos data: ${snapshot.data}'); // Debugging line
             return RefreshIndicator(
               onRefresh: _refreshTodos,
               child: ListView.builder(
