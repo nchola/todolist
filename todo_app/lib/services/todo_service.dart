@@ -69,20 +69,22 @@ class TodoService {
   }
 
   Future<void> deleteTodo(String id) async {
-    await _handleRequest<void>(
-      () async {
-        final response = await http.delete(Uri.parse('$apiUrl/$id')).timeout(
-          Duration(seconds: 5),
-          onTimeout: () {
-            throw Exception('Request timed out');
-          },
-        );
-        if (response.statusCode != 200 && response.statusCode != 204) {
-          throw Exception('Failed to delete todo');
-        }
-      },
-      'Failed to delete todo',
-    );
+    try {
+      final response = await http.delete(Uri.parse('$apiUrl/$id')).timeout(
+        Duration(seconds: 5),
+        onTimeout: () {
+          throw Exception('Request timed out');
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Sukses, jangan lakukan apa-apa, atau perbarui UI
+      } else {
+        throw Exception('Failed to delete todo: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting todo: $e');
+      throw e; // Tangkap kesalahan di UI dan tampilkan
+    }
   }
 
   Future<T> _handleRequest<T>(

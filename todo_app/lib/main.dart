@@ -14,8 +14,16 @@ class TodoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Todo App',
       theme: ThemeData(
+        brightness: Brightness.light,
         primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blueGrey,
+        scaffoldBackgroundColor: Colors.grey[900],
+      ),
+      themeMode: ThemeMode.system, // Use system theme (light/dark)
       home: HomeScreen(),
     );
   }

@@ -1,4 +1,5 @@
 const Todo = require('../models/Todo');
+const mongoose = require('mongoose');
 
 exports.getAllTodos = async (req, res) => {
   try {
@@ -37,14 +38,23 @@ exports.updateTodo = async (req, res) => {
 };
 
 exports.deleteTodo = async (req, res) => {
+  const id = req.params.id;
+
+  // Validasi ID sebelum melakukan operasi di MongoDB
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid Todo ID' });
+  }
+
   try {
-    const todo = await Todo.findById(req.params.id);
+    const todo = await Todo.findById(id);
     if (!todo) return res.status(404).json({ message: 'Todo not found' });
 
-    await todo.remove();
-    res.json({ message: 'Todo deleted' });
+    await todo.deleteOne();
+    res.status(200).json({ message: 'Todo deleted' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(`Error deleting todo: ${err.message}`);
+    res.status(500).json({ message: 'Failed to delete todo' });
   }
 };
+
 
