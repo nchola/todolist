@@ -8,10 +8,14 @@ class TodoService {
 
   Future<List<Todo>> getTodos() async {
     try {
-      final response = await http.get(Uri.parse(apiUrl));
+      final response = await http.get(Uri.parse(apiUrl)).timeout(
+        Duration(seconds: 5),
+        onTimeout: () {
+          throw Exception('Request timed out');
+        },
+      );
       if (response.statusCode == 200) {
         List<dynamic> body = jsonDecode(response.body);
-        print('Todos received: $body'); // Cetak data untuk debugging
         return body.map((dynamic item) => Todo.fromJson(item)).toList();
       } else {
         throw Exception('Failed to load todos: ${response.statusCode}');
@@ -25,10 +29,17 @@ class TodoService {
   Future<Todo> createTodo(String title) async {
     return _handleRequest<Todo>(
       () async {
-        final response = await http.post(
+        final response = await http
+            .post(
           Uri.parse(apiUrl),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'title': title}),
+        )
+            .timeout(
+          Duration(seconds: 5),
+          onTimeout: () {
+            throw Exception('Request timed out');
+          },
         );
         return Todo.fromJson(jsonDecode(response.body));
       },
@@ -39,10 +50,17 @@ class TodoService {
   Future<Todo> updateTodo(String id, Todo todo) async {
     return _handleRequest<Todo>(
       () async {
-        final response = await http.patch(
+        final response = await http
+            .patch(
           Uri.parse('$apiUrl/$id'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(todo.toJson()),
+        )
+            .timeout(
+          Duration(seconds: 5),
+          onTimeout: () {
+            throw Exception('Request timed out');
+          },
         );
         return Todo.fromJson(jsonDecode(response.body));
       },
@@ -53,8 +71,13 @@ class TodoService {
   Future<void> deleteTodo(String id) async {
     await _handleRequest<void>(
       () async {
-        final response = await http.delete(Uri.parse('$apiUrl/$id'));
-        if (response.statusCode != 200) {
+        final response = await http.delete(Uri.parse('$apiUrl/$id')).timeout(
+          Duration(seconds: 5),
+          onTimeout: () {
+            throw Exception('Request timed out');
+          },
+        );
+        if (response.statusCode != 200 && response.statusCode != 204) {
           throw Exception('Failed to delete todo');
         }
       },
