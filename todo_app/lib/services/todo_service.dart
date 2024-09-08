@@ -26,14 +26,36 @@ class TodoService {
     }
   }
 
-  Future<Todo> createTodo(String title) async {
+  Future<List<Todo>> getTodosByCategory(String category) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$apiUrl/category?category=$category'))
+          .timeout(
+        Duration(seconds: 5),
+        onTimeout: () {
+          throw Exception('Request timed out');
+        },
+      );
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((dynamic item) => Todo.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load todos: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching todos: $e');
+      throw e;
+    }
+  }
+
+  Future<Todo> createTodo(String title, String category) async {
     return _handleRequest<Todo>(
       () async {
         final response = await http
             .post(
           Uri.parse(apiUrl),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'title': title}),
+          body: jsonEncode({'title': title, 'category': category}),
         )
             .timeout(
           Duration(seconds: 5),
@@ -69,22 +91,20 @@ class TodoService {
   }
 
   Future<void> deleteTodo(String id) async {
-    try {
-      final response = await http.delete(Uri.parse('$apiUrl/$id')).timeout(
-        Duration(seconds: 5),
-        onTimeout: () {
-          throw Exception('Request timed out');
-        },
-      );
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Sukses, jangan lakukan apa-apa, atau perbarui UI
-      } else {
-        throw Exception('Failed to delete todo: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error deleting todo: $e');
-      throw e; // Tangkap kesalahan di UI dan tampilkan
-    }
+    await _handleRequest<void>(
+      () async {
+        final response = await http.delete(Uri.parse('$apiUrl/$id')).timeout(
+          Duration(seconds: 5),
+          onTimeout: () {
+            throw Exception('Request timed out');
+          },
+        );
+        if (response.statusCode != 200 && response.statusCode != 204) {
+          throw Exception('Failed to delete todo');
+        }
+      },
+      'Failed to delete todo',
+    );
   }
 
   Future<T> _handleRequest<T>(

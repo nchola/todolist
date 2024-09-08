@@ -1,6 +1,7 @@
 const Todo = require('../models/Todo');
 const mongoose = require('mongoose');
 
+// Get all todos
 exports.getAllTodos = async (req, res) => {
   try {
     const todos = await Todo.find();
@@ -13,6 +14,8 @@ exports.getAllTodos = async (req, res) => {
 exports.createTodo = async (req, res) => {
   const todo = new Todo({
     title: req.body.title,
+    category: req.body.category || 'All',
+    labels: req.body.labels || [], // Accept labels during creation
   });
 
   try {
@@ -23,6 +26,8 @@ exports.createTodo = async (req, res) => {
   }
 };
 
+
+// Update a todo
 exports.updateTodo = async (req, res) => {
   try {
     const todo = await Todo.findById(req.params.id);
@@ -30,17 +35,18 @@ exports.updateTodo = async (req, res) => {
 
     todo.title = req.body.title || todo.title;
     todo.completed = req.body.completed != null ? req.body.completed : todo.completed;
-    const updatedTodo = await todo.save();
+    todo.labels = req.body.labels || todo.labels;
     res.json(updatedTodo);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
+// Delete a todo
 exports.deleteTodo = async (req, res) => {
   const id = req.params.id;
 
-  // Validasi ID sebelum melakukan operasi di MongoDB
+  // Validate ID before performing operations in MongoDB
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: 'Invalid Todo ID' });
   }
@@ -57,4 +63,13 @@ exports.deleteTodo = async (req, res) => {
   }
 };
 
-
+// Get todos by category
+exports.getTodosByCategory = async (req, res) => {
+  const category = req.query.category || 'All';
+  try {
+    const todos = await Todo.find({ category });
+    res.json(todos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
